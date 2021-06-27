@@ -11,21 +11,22 @@ class UserController extends BaseController
 {
   public function __construct()
   {
-    $this->middleware('auth',[
-      'except'=>['register','login']
+    $this->middleware('auth', [
+      'except' => ['register', 'login']
     ]);
   }
 
-  protected function buildFailedValidationResponse(Request $request, array $errors) {
+  protected function buildFailedValidationResponse(Request $request, array $errors)
+  {
     $err = [];
     foreach ($errors as $key => $e) {
-      array_push($err,$e[0]);
+      array_push($err, $e[0]);
     }
     return response()->json([
       "status" => "error",
       "code" => 406,
       "message" => $err,
-    ],406);
+    ], 406);
   }
 
   public function index()
@@ -34,7 +35,7 @@ class UserController extends BaseController
       'status' => 'success',
       'code' => 200,
       'data' => auth()->user()->with('meets')->first()
-    ],200);
+    ], 200);
   }
 
   public function register(Request $r)
@@ -47,12 +48,12 @@ class UserController extends BaseController
       'password_confirmation' => $r->header('repassword'),
     ]);
 
-    $this->validate($r,[
+    $this->validate($r, [
       'name' => 'required',
       'email' => 'required|email|unique:users',
       'telp' => 'required|numeric|unique:users',
       'password' => 'required|confirmed|min:8',
-    ],[
+    ], [
       'name.required' => 'Nama lengkap harus diisi',
       'email.required' => 'Alamat email harus diisi',
       'email.email' => 'Format email tidak benar',
@@ -79,42 +80,40 @@ class UserController extends BaseController
       'status' => 'success',
       'code' => 201,
       'data' => $user
-    ],201);
-
+    ], 201);
   }
 
   public function login(Request $r)
   {
-    $user = User::where('email',$r->header('username'))
-    ->orWhere('telp',$r->header('username'))->first();
+    $user = User::where('email', $r->header('username'))
+      ->orWhere('telp', $r->header('username'))->first();
 
-    if ($user && app('hash')->check($r->header('password'),$user->password)) {
-      $user->update([
-        'api_token' => Str::random(100)
-      ]);
+    if ($user && app('hash')->check($r->header('password'), $user->password)) {
+      if (!$user->api_token) {
+        $user->update([
+          'api_token' => Str::random(100)
+        ]);
+      }
       return response()->json([
         'status' => 'success',
         'code' => 202,
         'data' => $user
-      ],202);
-    }else {
+      ], 202);
+    } else {
       return response()->json([
         'status' => 'error',
         'code' => 406,
         'data' => ''
-      ],406);
+      ], 406);
     }
   }
 
-  public function logout(Request $r)
+  public function logout()
   {
-    auth()->user()->update([
-      'api_token' => null
-    ]);
     return response()->json([
       'status' => 'success',
       'code' => 202,
       'data' => ''
-    ],202);
+    ], 202);
   }
 }
